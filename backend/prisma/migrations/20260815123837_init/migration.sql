@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "GameState" ALTER COLUMN "activeSkin" SET DATA TYPE TEXT,
+ALTER COLUMN "activeEvent" SET DATA TYPE TEXT;
