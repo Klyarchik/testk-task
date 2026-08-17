@@ -1,13 +1,104 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EventType {
+  BONUS
+  CRISIS
+  TWIST
+}
+
+enum UpgradeType {
+  COMBO
+  BOT
+  TREND
+  SKIN
+  STUDIO
+}
+
+model User {
+  id           Int        @id @default(autoincrement())
+  username     String     @unique @db.VarChar(24)
+  passwordHash String     @db.VarChar(255)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  gameState    GameState?
+  purchases    UpgradePurchase[]
+  skinUnlocks  SkinUnlock[]
+  eventHistory GameEvent[]
+}
+
+model GameState {
+  id                    Int      @id @default(autoincrement())
+  userId                Int      @unique
+  hype                  Decimal  @default(0) @db.Decimal(30, 2)
+  lifetimeHype          Decimal  @default(0) @db.Decimal(30, 2)
+  clickPower            Decimal  @default(1) @db.Decimal(20, 2)
+  hypePerSecond         Decimal  @default(0) @db.Decimal(20, 2)
+  premiumCurrency       Int      @default(0)
+  stage                 Int      @default(1)
+  comboLevel            Int      @default(0)
+  botLevel              Int      @default(0)
+  trendLevel            Int      @default(0)
+  skinLevel             Int      @default(0)
+  studioLevel           Int      @default(0)
+  activeSkin             String   @default("classic")
+  comboCount             Int      @default(0)
+  comboExpiresAt         DateTime?
+  activeEvent            String?
+  eventMultiplier        Decimal  @default(1) @db.Decimal(10, 2)
+  eventExpiresAt         DateTime?
+  boosterExpiresAt       DateTime?
+  lastTickAt             DateTime   @default(now())
+  createdAt              DateTime   @default(now())
+  updatedAt              DateTime   @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+
+model SkinUnlock {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  skin      String   @db.VarChar(32)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, skin])
+  @@index([userId])
+}
+
+model UpgradePurchase {
+  id        Int         @id @default(autoincrement())
+  userId    Int
+  type      UpgradeType
+  level     Int
+  costHype  Decimal?    @db.Decimal(30, 2)
+  costMemes Int?
+  createdAt DateTime    @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+}
+
+model GameEvent {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  type        EventType
+  code        String    @db.VarChar(64)
+  multiplier  Decimal   @default(1) @db.Decimal(10, 2)
+  durationSec Int       @default(0)
+  createdAt   DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }
